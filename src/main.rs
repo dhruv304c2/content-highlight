@@ -1,19 +1,22 @@
 mod services{
     pub mod vid_download_service;
+    pub mod content_fetch_service;
 }
 
+mod structs{
+    pub mod search_response;
+}
 
 use std::io;
+use services::{content_fetch_service::ContentFetchService, vid_download_service::VidDownloadService};
 
-use services::vid_download_service::VidDownloadService;
-
-fn main() {
+#[tokio::main]
+async fn main() -> io::Result<()> {
     println!("Enter a video url to download");
-    let mut url = String::new();
-    
-    io::stdin()
-        .read_line(&mut url)
-        .expect("failed to read user input");
-
-    VidDownloadService::download(url.trim().to_string());
+    let fetched_urls = ContentFetchService::start_fetch().await?;
+    for url in &fetched_urls {
+        let _ = VidDownloadService::download(url.to_string());
+    }
+    println!("Done!");
+    Ok(())
 }
