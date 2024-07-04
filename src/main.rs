@@ -5,6 +5,11 @@ mod services{
 
 mod structs{
     pub mod search_response;
+    pub mod download_request;
+}
+
+mod helpers{
+    pub mod iso_8601_helper; 
 }
 
 use std::io;
@@ -13,9 +18,11 @@ use services::{content_fetch_service::ContentFetchService, vid_download_service:
 #[tokio::main]
 async fn main() -> io::Result<()> {
     println!("Enter a video url to download");
-    let fetched_urls = ContentFetchService::start_fetch().await?;
-    for url in &fetched_urls {
-        let _ = VidDownloadService::download(url.to_string());
+    let download_requests = ContentFetchService::start_fetch().await?;
+
+    println!("Downloading videos....");
+    for download_request in &download_requests {
+        let _ = VidDownloadService::download(download_request.clone());
     }
     println!("Done!");
     Ok(())
