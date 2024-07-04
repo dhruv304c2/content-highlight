@@ -78,3 +78,11 @@ pub fn seconds_to_iso8601_duration(seconds: i64) -> String {
 
     iso_string
 }
+
+pub fn seconds_to_time_format(seconds: i64) -> String {
+    let hours = seconds / 3600;
+    let minutes = (seconds % 3600) / 60;
+    let secs = seconds % 60;
+
+    format!("{:01}:{:02}:{:02}", hours, minutes, secs)
+}

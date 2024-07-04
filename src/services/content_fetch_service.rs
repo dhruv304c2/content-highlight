@@ -1,5 +1,5 @@
 use std::{i64, io};
-use crate::{helpers::iso_8601_helper, structs::{download_request::{self, DownloadRequest}, search_response::{SearchItem, SearchResponse, VideoItem}}};
+use crate::{helpers::iso_8601_helper, structs::{download_request::ContentRequest, search_response::{SearchItem, SearchResponse, VideoItem}}};
 
 const API_KEY : &str = "AIzaSyBjUaKPrI2FjVD1o9oK6f05O_1M7aRKlUs";
 const BASE_URL : &str = "https://www.googleapis.com/youtube"; 
@@ -17,7 +17,7 @@ pub struct SearchRequest{
 
 impl ContentFetchService {
 
-    pub async fn start_fetch() -> io::Result<Vec<DownloadRequest>> {
+    pub async fn start_fetch() -> io::Result<Vec<ContentRequest>> {
         let client = reqwest::Client::new();
 
         let fetch_api_url = format!("{}/v3/search", BASE_URL).to_string();
@@ -33,9 +33,7 @@ impl ContentFetchService {
             .await
             .expect("failed to get text");
 
-        println!("Fetched Videos {}", response);
-        
-        let mut vec: Vec<DownloadRequest> = Vec::new();
+        let mut vec: Vec<ContentRequest> = Vec::new();
 
         let result = serde_json::from_str::<SearchResponse<SearchItem>>(&response)
             .expect("failed to parse search response");
@@ -64,9 +62,11 @@ impl ContentFetchService {
             }
 
             println!("{}) {}",count +1,item.snippet.title);
-            let dn_request = DownloadRequest{
+            let dn_request = ContentRequest{
+                title: item.snippet.title.clone(),
                 video_id: item.id.videoId.clone().expect("does not have a video Id"),
-                max_duration_sec: request.trim_to
+                max_duration_sec: request.trim_to,
+                file_path: "".to_string()
             };
 
             vec.push(dn_request);
@@ -109,8 +109,8 @@ impl ContentFetchService {
         query = query.trim().to_string();
 
         let max_duration =  Self::get_valid_user_input("Enter max duration: ".to_string(), i64::MAX);
+        let trim_to = Self::get_valid_user_input("Trim results down to seconds, from start: ".to_string(), max_duration);
         let max_video_count = Self::get_valid_user_input("Set max video count: ".to_string(), u32::MAX);
-        let trim_to = Self::get_valid_user_input("Trim results down to seconds, from start: ".to_string(), max_video_count);
 
         return SearchRequest{
             query,
