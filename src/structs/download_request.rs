@@ -3,7 +3,8 @@ pub struct ContentRequest{
     pub title : String,
     pub video_id : String,
     pub max_duration_sec : i64,
-    pub file_path: String
+    pub aud_file: String,
+    pub transcript_file: String
 }
 
 impl ContentRequest {

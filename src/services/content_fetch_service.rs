@@ -1,4 +1,4 @@
-use std::{i64, io};
+use std::{i64, io::{self, Write}};
 use crate::{helpers::iso_8601_helper, structs::{download_request::ContentRequest, search_response::{SearchItem, SearchResponse, VideoItem}}};
 
 const API_KEY : &str = "AIzaSyBjUaKPrI2FjVD1o9oK6f05O_1M7aRKlUs";
@@ -10,9 +10,9 @@ pub struct ContentFetchService{
 
 pub struct SearchRequest{
     pub query : String,
-    pub max_duration : i64,
+    pub min_time_lmt : i64,
+    pub max_time_lmt: i64,
     pub max_video_count: u32,
-    pub trim_to: i64
 }
 
 impl ContentFetchService {
@@ -40,7 +40,7 @@ impl ContentFetchService {
 
         let items = result.items; 
 
-        println!("Total Search Results: {}", items.len());
+        println!("\nTotal Search Results: {}", items.len());
         println!("Results after applying filters: ");
 
         let mut count = 0;
@@ -54,19 +54,24 @@ impl ContentFetchService {
             }
 
             let video_details = Self::get_video_details(item.id.videoId.clone().expect("does not have a video Id")).await;
-            let vidoe_duration = iso_8601_helper::iso8601_duration_to_seconds(&video_details.contentDetails.duration)
+            let video_duration = iso_8601_helper::iso8601_duration_to_seconds(&video_details.contentDetails.duration)
                 .expect("failed to convert video duration to seconds");
 
-            if vidoe_duration > request.max_duration {
+            if video_duration < request.min_time_lmt {
                 continue;
             }
+
+            let trim;
+            if video_duration < request.max_time_lmt { trim = video_duration; }
+            else { trim = video_duration; }
 
             println!("{}) {}",count +1,item.snippet.title);
             let dn_request = ContentRequest{
                 title: item.snippet.title.clone(),
                 video_id: item.id.videoId.clone().expect("does not have a video Id"),
-                max_duration_sec: request.trim_to,
-                file_path: "".to_string()
+                max_duration_sec: trim,
+                aud_file: "".to_string(),
+                transcript_file: "".to_string(),
             };
 
             vec.push(dn_request);
@@ -79,20 +84,21 @@ impl ContentFetchService {
     pub fn get_valid_user_input<T>(prompt: String, default_val : T) -> T 
     where T : std::str::FromStr {
         let mut parsed = false;
-        let mut duration_input = String::new();
+        let mut inp = String::new();
         let mut paresed_val = default_val;
 
         while !parsed {
-            println!("{}", prompt);
-            let _ = io::stdin().read_line(&mut duration_input);
-            duration_input = duration_input.trim().to_string();
+            print!("{}", prompt);
+            _ = io::stdout().flush();
+            let _ = io::stdin().read_line(&mut inp);
+            inp = inp.trim().to_string();
 
-            let parse_result = duration_input.parse::<T>();
+            let parse_result = inp.parse::<T>();
 
             match parse_result {
                 Ok(val) => {
                     paresed_val = val;
-                    parsed = true;
+                    break;
                 }
                 Err(_) => {
                     parsed = false;
@@ -103,20 +109,16 @@ impl ContentFetchService {
     }
 
     pub fn get_request_from_user() -> SearchRequest {
-        let mut query = String::new();
-        println!("Enter search querry:");
-        let _ = io::stdin().read_line(&mut query);
-        query = query.trim().to_string();
-
-        let max_duration =  Self::get_valid_user_input("Enter max duration: ".to_string(), i64::MAX);
-        let trim_to = Self::get_valid_user_input("Trim results down to seconds, from start: ".to_string(), max_duration);
-        let max_video_count = Self::get_valid_user_input("Set max video count: ".to_string(), u32::MAX);
+        let query = Self::get_valid_user_input("Search for: ".to_string(), "".to_string());
+        let max_duration =  Self::get_valid_user_input("Minimum video length allowed (s) : ".to_string(), i64::MAX);
+        let trim_to = Self::get_valid_user_input("Maximum video length allowed (s) : ".to_string(), max_duration);
+        let max_video_count = Self::get_valid_user_input("Maximum result limit: ".to_string(), u32::MAX);
 
         return SearchRequest{
             query,
-            max_duration,
+            min_time_lmt: max_duration,
             max_video_count,
-            trim_to : trim_to.into()
+            max_time_lmt : trim_to.into()
         }
     }
 
