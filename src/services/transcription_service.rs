@@ -1,12 +1,9 @@
-use std::{fs::{File, OpenOptions}, io::{self, Write}, path::PathBuf, process::Command};
-
+use std::{env, fs::{File, OpenOptions}, io::{self, Write}, path::PathBuf, process::Command};
 use crate::structs::download_request::ContentRequest;
-
 use super::file_manager_service::FileManagerService;
 
 pub const INSTALL_SCRIPT_URL: &str = "https://raw.githubusercontent.com/AssemblyAI/assemblyai-cli/main/install.sh";
 pub const INSTALL_SCRIPT_PATH: &str = "/tmp/install_assemblyai.sh";
-pub const ASSEMBLY_API_KEY: &str = "c3d28c7ba9f1412db5a4297b2fb3b3a1"; 
 
 pub struct TranscriptionService {
 
@@ -36,7 +33,8 @@ impl TranscriptionService {
                                 println!("{}", String::from_utf8_lossy(&output.stdout));
                                 let check_command = Command::new("assemblyai")
                                     .arg("config")
-                                    .arg(ASSEMBLY_API_KEY)
+                                    .arg(env::var("ASSEMBLYAI_API_KEY")
+                                        .expect("failed to get assembly ai API key"))
                                     .output();
                                 if let Ok(check_output) = check_command {
                                     return check_output.status.success();

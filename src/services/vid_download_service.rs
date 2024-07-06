@@ -18,8 +18,7 @@ impl VidDownloadService{
         let download_output = Self::download_in_range(download_request.video_id.clone(), 
             "00:00:00".to_string(),
             trim_to,
-            true)
-            .expect("failed to return output from download command");
+            true)?;
 
         if download_output.status.success() {
 

@@ -1,7 +1,6 @@
-use std::{i64, io::{self, Write}};
+use std::{env, i64, io::{self, Write}};
 use crate::{helpers::iso_8601_helper, structs::{download_request::ContentRequest, search_response::{SearchItem, SearchResponse, VideoItem}}};
 
-const API_KEY : &str = "AIzaSyBjUaKPrI2FjVD1o9oK6f05O_1M7aRKlUs";
 const BASE_URL : &str = "https://www.googleapis.com/youtube"; 
 
 pub struct ContentFetchService{
@@ -23,7 +22,8 @@ impl ContentFetchService {
         let fetch_api_url = format!("{}/v3/search", BASE_URL).to_string();
 
         let request = Self::get_request_from_user();
-        let params = [("part", "snippet"),("q", &request.query.to_string()), ("key", API_KEY)];
+        let params = [("part", "snippet"),("q", &request.query.to_string()), 
+            ("key", &env::var("YT_API_KEY").expect("could not get youtube api key"))];
 
         let response = client.get(fetch_api_url)
             .query(&params)
@@ -62,8 +62,8 @@ impl ContentFetchService {
             }
 
             let trim;
-            if video_duration < request.max_time_lmt { trim = video_duration; }
-            else { trim = video_duration; }
+            if video_duration < request.max_time_lmt { trim = video_duration - 20; }
+            else { trim = request.max_time_lmt; }
 
             println!("{}) {}",count +1,item.snippet.title);
             let dn_request = ContentRequest{
