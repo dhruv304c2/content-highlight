@@ -1,4 +1,4 @@
-use std::{io::{self, Write}, path::{self, PathBuf}, process::{Command, Output}, str};
+use std::{fs::OpenOptions, io::{self, Write}, path::PathBuf, process::{Command, Output}};
 use regex::Regex;
 use crate::{helpers::iso_8601_helper::seconds_to_time_format, structs::download_request::ContentRequest};
 use super::file_manager_service::FileManagerService;
@@ -53,10 +53,19 @@ impl VidDownloadService{
                 Some(download_path.clone()))?;
 
             if output.status.success() {
-                println!("Done ✔")
+                println!("Done ✔");
+
+                //saving highlight data
+                let mut data = OpenOptions::new()
+                    .write(true)
+                    .append(true)
+                    .create(true)
+                    .open(download_path.join(format!("{}.json", highlight.title)))?;
+
+                writeln!(data, "{}" ,serde_json::to_string(highlight).expect("failed to write highlight as json"))?;
             }
             else{
-                println!("Failed ✗")
+                println!("Failed ✗");
             }
         }
 
@@ -78,9 +87,6 @@ impl VidDownloadService{
         let section_regex = format!("*{}-{}", start_stamp, end_stamp);
 
         let mut cmd = Command::new("yt-dlp");
-
-        // Add the fastest download options
-        cmd.arg("--no-check-certificate");
 
         if audio_only {
             cmd.arg("-f").arg("worst") // Use the worst quality for faster audio download

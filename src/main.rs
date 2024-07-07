@@ -17,6 +17,7 @@ mod helpers{
     pub mod llm_prompts;
 }
 
+use serde_json::error;
 use services::{
     content_fetch_service::ContentFetchService,
     file_manager_service::FileManagerService,
@@ -91,7 +92,14 @@ async fn main() -> io::Result<()> {
     println!("\nDownloading highlights....");
     for req in highlight_download_req.iter() {
         println!("-> Downloading {} Highlights for video: {}", req.highlights.len(), req.lable);
-        _ = VidDownloadService::download_highlights(req);
+        match  VidDownloadService::download_highlights(req) {
+            Ok(_) => {
+                //Do nothing
+            },
+            Err(msg) => {
+                eprintln!("failed to downlaod section: {}", msg);
+            }
+        } 
     }
 
     println!("\nDone!");

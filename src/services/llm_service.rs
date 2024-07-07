@@ -29,7 +29,8 @@ impl LLMService {
             vec![
                 instruction_message,
                 transcript_message
-            ]
+            ],
+            1000
         );
 
         // println!("Sending llm request: \n{}", 

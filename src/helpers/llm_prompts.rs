@@ -13,6 +13,8 @@ keep the following things in mind:
 3) Try to ignore introductions.
 4) Time stamps in transcript has format \"minutes:seconds\"
 5) always include hours in timestamp even if the time is under 1 hour
+6) create upto maximum of 5 highlights
+7) use emojis in title
 
 return the results in the following JSON format: 
 

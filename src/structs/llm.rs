@@ -10,7 +10,8 @@ pub struct Message{
 #[derive(Serialize,Deserialize,Clone)]
 pub struct Request{
     pub model : String,
-    pub messages : Vec<Message>
+    pub messages : Vec<Message>,
+    pub max_tokens: i64
 }
 
 #[derive(Serialize,Deserialize,Clone)]
@@ -39,10 +40,11 @@ impl Message{
 }
 
 impl Request{
-    pub fn new(model : String, messages : Vec<Message>) -> Request{
+    pub fn new(model : String, messages : Vec<Message>, max_tokens: i64) -> Request{
         Request{
             model,
-            messages
+            messages,
+            max_tokens
         }
     }
 }
