@@ -1,4 +1,4 @@
-use std::{io, process::{Command, Output}, str};
+use std::{io::{self, Write}, path::{self, PathBuf}, process::{Command, Output}, str};
 use regex::Regex;
 use crate::{helpers::iso_8601_helper::seconds_to_time_format, structs::download_request::ContentRequest};
 use super::file_manager_service::FileManagerService;
@@ -11,14 +11,15 @@ pub struct VidDownloadService{
 
 impl VidDownloadService{
 
-    pub fn download_audio(download_request: ContentRequest) -> io::Result<ContentRequest> {
+    pub fn download_audio(download_request: &mut ContentRequest) -> io::Result<&mut ContentRequest> {
 
         let trim_to = seconds_to_time_format(download_request.max_duration_sec);
  
         let download_output = Self::download_in_range(download_request.video_id.clone(), 
             "00:00:00".to_string(),
             trim_to,
-            true)?;
+            true,
+            None)?;
 
         if download_output.status.success() {
 
@@ -28,15 +29,9 @@ impl VidDownloadService{
 
             println!("-> Downloaded file: {}", file_name);
 
-            let new_req = ContentRequest{
-                title : download_request.title,
-                video_id: download_request.video_id.clone(),
-                max_duration_sec: download_request.max_duration_sec,
-                aud_file: file_name,
-                transcript_file: "".to_string(),
-            };
+            download_request.aud_file = file_name;
 
-            Ok(new_req)
+            Ok(download_request)
         }
         else{
             let err = io::Error::new(io::ErrorKind::Other, format!("-> Download failed for {}", download_request.title).to_string());
@@ -44,8 +39,41 @@ impl VidDownloadService{
         }
     }
 
-    pub fn download_in_range(vid_id: String, start_stamp: String, end_stamp: String, audio_only : bool) -> io::Result<Output> {
-        let download_dir_path = FileManagerService::get_downloads_path()?;
+    pub fn download_highlights(content_request: &ContentRequest) -> io::Result<()>{
+        for highlight in content_request.highlights.iter() {
+            let relative_path = format!("{}/{}",content_request.lable,highlight.title); 
+            let download_path = FileManagerService::create_highlight_dir(relative_path)?;
+
+            print!("  -> Downloading highlight : {}....", highlight.title);
+            _ = io::stdout().flush();
+            let output = Self::download_in_range(content_request.video_id.clone(), 
+                highlight.startStamp.clone(),
+                highlight.endStamp.clone(),
+                false, 
+                Some(download_path.clone()))?;
+
+            if output.status.success() {
+                println!("Done ✔")
+            }
+            else{
+                println!("Failed ✗")
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn download_in_range(vid_id: String,
+        start_stamp: String, 
+        end_stamp: String,
+        audio_only : bool,
+        at_path: Option<PathBuf>) -> io::Result<Output> {
+        let download_dir_path;
+        
+        match at_path {
+            Some(p) => download_dir_path = p,
+            None => download_dir_path = FileManagerService::get_downloads_path()?,
+        }
 
         let section_regex = format!("*{}-{}", start_stamp, end_stamp);
 
@@ -62,7 +90,7 @@ impl VidDownloadService{
         }
 
         let download_output = cmd
-            .arg("--download-section")
+            .arg("--download-sections")
             .arg(&section_regex)
             .arg(&vid_id)
             .current_dir(download_dir_path)

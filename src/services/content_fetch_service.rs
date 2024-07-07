@@ -66,13 +66,10 @@ impl ContentFetchService {
             else { trim = request.max_time_lmt; }
 
             println!("{}) {}",count +1,item.snippet.title);
-            let dn_request = ContentRequest{
-                title: item.snippet.title.clone(),
-                video_id: item.id.videoId.clone().expect("does not have a video Id"),
-                max_duration_sec: trim,
-                aud_file: "".to_string(),
-                transcript_file: "".to_string(),
-            };
+            let dn_request = ContentRequest::new(
+                item.snippet.title.clone(),
+                item.id.videoId.clone().expect("does not have a video Id"),
+                trim);
 
             vec.push(dn_request);
             count += 1;
@@ -126,7 +123,9 @@ impl ContentFetchService {
         let client = reqwest::Client::new();
 
         let api_url = format!("{}/v3/videos", BASE_URL).to_string();
-        let params = [("part", "snippet,contentDetails"),("key", API_KEY),("id", &video_id)];
+        let params = [("part", "snippet,contentDetails"),
+            ("key", &env::var("YT_API_KEY").expect("failed to get youtube API key")),
+            ("id", &video_id)];
 
         let response = client.get(api_url)
             .query(&params)

@@ -1,4 +1,4 @@
-use std::{env, fs::{File, OpenOptions}, io::{self, Write}, path::PathBuf, process::Command};
+use std::{env, fs::{File, OpenOptions}, io::{self, Read, Write}, path::PathBuf, process::Command};
 use crate::structs::download_request::ContentRequest;
 use super::file_manager_service::FileManagerService;
 
@@ -59,7 +59,7 @@ impl TranscriptionService {
         false
     }
 
-    pub fn transcribe(content_request: ContentRequest) -> io::Result<ContentRequest> {
+    pub fn transcribe(content_request: &mut ContentRequest) -> io::Result<&mut ContentRequest> {
 
         let download_dir_path = FileManagerService::get_downloads_path().expect("failed to get download path");
 
@@ -76,20 +76,14 @@ impl TranscriptionService {
             Ok(output) => {
                 if output.status.success() {
                     let transcription = String::from_utf8_lossy(&output.stdout).to_string();
-                    let transcirpt_file_name = format!("{} [{}].txt", content_request.title, content_request.video_id);
-                    let result = Self::write_transcription_to_file(transcirpt_file_name.clone(),
-                        content_request.title.to_string(),
+                    let transcript_name = content_request.transcipt_name.clone();
+                    let title = content_request.title.clone();
+                    let result = Self::write_transcription_to_file(transcript_name,
+                        title,
                         transcription);
                     match result {
                         Ok(_) => {
-                            let new_req = ContentRequest{
-                                title: content_request.title,
-                                video_id: content_request.video_id,
-                                max_duration_sec: content_request.max_duration_sec,
-                                aud_file: content_request.aud_file,
-                                transcript_file: transcirpt_file_name
-                            };
-                            return Ok(new_req);
+                            return Ok(content_request);
                         },
                         Err(e) => {
                             return Err(e);
@@ -122,5 +116,19 @@ impl TranscriptionService {
         writeln!(file, "{}", transcription)?;
 
         Ok(full_path)
+    }
+
+    pub fn read_transcript(content_request: ContentRequest) -> io::Result<String> {
+        let transcriptions_path = FileManagerService::get_transcription_path();
+        let full_path = transcriptions_path?.join(content_request.transcipt_name);
+
+        let mut file = OpenOptions::new()
+            .read(true)
+            .open(&full_path)?;
+
+        let mut string = String::new();
+        file.read_to_string(&mut string)?;
+
+        return Ok(string);
     }
 }
