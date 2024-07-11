@@ -87,6 +87,7 @@ impl ContentFetchService {
         while !parsed {
             print!("{}", prompt);
             _ = io::stdout().flush();
+            inp.clear();
             let _ = io::stdin().read_line(&mut inp);
             inp = inp.trim().to_string();
 
