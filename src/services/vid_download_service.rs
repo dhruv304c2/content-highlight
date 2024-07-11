@@ -44,7 +44,7 @@ impl VidDownloadService{
             let relative_path = format!("{}/{}",content_request.lable,highlight.title); 
             let download_path = FileManagerService::create_highlight_dir(relative_path)?;
 
-            print!("  -> Downloading highlight : {}....", highlight.title);
+            print!("  -> Downloading highlight : {} [{}]-[{}]....", highlight.title, highlight.startStamp, highlight.endStamp);
             _ = io::stdout().flush();
             let output = Self::download_in_range(content_request.video_id.clone(), 
                 highlight.startStamp.clone(),
