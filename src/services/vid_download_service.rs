@@ -1,6 +1,6 @@
 use std::{error::Error, fs::OpenOptions, io::{self, Write}, path::PathBuf, process::{Command, Output}};
 use regex::Regex;
-use crate::{helpers::iso_8601_helper::seconds_to_time_format, structs::download_request::ContentRequest};
+use crate::{helpers::iso_8601_helper::seconds_to_time_format, structs::download_request::{ContentRequest, HighLight}};
 use super::file_manager_service::FileManagerService;
 
 const AUDIO_FMT : &str = "mp3";
@@ -40,11 +40,12 @@ impl VidDownloadService{
     }
 
     pub async fn download_highlights(content_request: &mut ContentRequest) -> Result<&mut ContentRequest, Box<dyn Error>>{
+        println!("  -> Downloading highlights for : {}", content_request.title);
         for highlight in content_request.highlights.iter() {
             let relative_path = format!("{}/{}",content_request.lable,highlight.title); 
             let download_path = FileManagerService::create_highlight_dir(relative_path)?;
 
-            print!("  -> Downloading highlight : {} [{}]-[{}]....", highlight.title, highlight.startStamp, highlight.endStamp);
+            print!("        -> Downloading highlight : {} [{}]-[{}]....", highlight.title, highlight.startStamp, highlight.endStamp);
             _ = io::stdout().flush();
             let output = Self::download_in_range(content_request.video_id.clone(), 
                 highlight.startStamp.clone(),
