@@ -21,7 +21,11 @@ mod content_pipeline{
     pub mod steps;
 }
 
-use content_pipeline::steps::{AudioDownloadStep, DownloadHighlightsStep, LLMAnalysisStep, Step, TranscriptionStep};
+use content_pipeline::steps::{AudioDownloadStep, 
+    DownloadHighlightsStep, 
+    LLMAnalysisStep, 
+    Step, 
+    TranscriptionStep};
 use services::{
     content_fetch_service::ContentFetchService,
     file_manager_service::FileManagerService
