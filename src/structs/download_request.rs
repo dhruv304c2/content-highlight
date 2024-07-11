@@ -9,7 +9,8 @@ pub struct ContentRequest{
     pub link : String,
     pub transcipt_name: String,
     pub highlights: Vec<HighLight>,
-    pub lable : String
+    pub lable : String,
+    pub cancelled : bool
 }
 
 #[derive(Serialize,Deserialize,Clone)]
@@ -31,6 +32,11 @@ impl ContentRequest {
             link: format!("{}{}", "https://www.youtube.com/watch?v=", video_id).to_string(),
             transcipt_name: format!("{} [{}].txt", title, video_id).to_string(),
             lable: format!("{} [{}]", title, video_id).to_string(),
+            cancelled : false
         }
+    }
+
+    pub fn cancel(&mut self){
+        self.cancelled = true
     }
 }

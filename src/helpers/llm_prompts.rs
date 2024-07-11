@@ -12,9 +12,12 @@ keep the following things in mind:
 2) Make the titles click-bait and fun.
 3) Try to ignore introductions.
 4) Time stamps in transcript has format \"minutes:seconds\"
-5) always include hours in timestamp even if the time is under 1 hour
-6) create upto maximum of 5 highlights
+5) create upto maximum of 5 highlights
 7) use emojis in title
+
+make sure that:
+1) start time is earlier than end time
+2) always include hours in timestamp even if the time is under 1 hour
 
 return the results in the following JSON format: 
 

@@ -1,5 +1,5 @@
 use core::str;
-use std::{env, error::Error};
+use std::{env, error::Error, io::{self, Write}};
 use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE}, Client};
 use crate::{helpers::llm_prompts, structs::{download_request::ContentRequest, llm::{APIResponse, HighlightResponse, Message, Request}}};
 use super::transcription_service::TranscriptionService;
@@ -12,6 +12,8 @@ const OPEN_AI_BASE_URL : &str = "https://api.openai.com";
 
 impl LLMService {
     pub async fn get_highlights_from_transcription(content_request : &mut ContentRequest) -> Result<&mut ContentRequest, Box<dyn Error>> {
+        println!("-> Analysing transcript for: {}", content_request.title);
+
         let transcript = TranscriptionService::read_transcript(content_request.clone())?;
 
         let instruction_message = Message::new(
@@ -56,12 +58,12 @@ impl LLMService {
             .await
             .expect("failed to convert response to text");
 
-        println!("llm response: \n{}", response);
+        // println!("llm response: \n{}", response);
         
         let ser_response = serde_json::from_str::<APIResponse>(&response)?;
         match  ser_response.choices.first(){
             Some(response) => {
-                println!("LLM response: {}", response.message.content);
+                // println!("LLM response: {}", response.message.content);
                 let mut highlight_response = serde_json::from_str::<HighlightResponse>(&response.message.content)
                     .expect("failed to de serialize json");
                 content_request.highlights.append(&mut highlight_response.highlights);

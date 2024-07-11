@@ -1,4 +1,4 @@
-use std::{env, fs::{File, OpenOptions}, io::{self, Read, Write}, path::PathBuf, process::Command};
+use std::{env, error::Error, fs::{File, OpenOptions}, io::{self, Read, Write}, path::PathBuf, process::Command};
 use crate::structs::download_request::ContentRequest;
 use super::file_manager_service::FileManagerService;
 
@@ -59,7 +59,7 @@ impl TranscriptionService {
         false
     }
 
-    pub fn transcribe(content_request: &mut ContentRequest) -> io::Result<&mut ContentRequest> {
+    pub async fn transcribe(content_request: &mut ContentRequest) -> Result<&mut ContentRequest, Box<dyn Error>> {
 
         let download_dir_path = FileManagerService::get_downloads_path().expect("failed to get download path");
 
@@ -86,7 +86,7 @@ impl TranscriptionService {
                             return Ok(content_request);
                         },
                         Err(e) => {
-                            return Err(e);
+                            return Err(Box::new(e));
                         }
                     }
                 } else {
@@ -99,7 +99,7 @@ impl TranscriptionService {
         }
 
         let err = io::Error::new(io::ErrorKind::Other, err_msg);
-        Err(err)
+        Err(Box::new(err))
     }
 
     fn write_transcription_to_file(file_name: String, title: String, transcription: String) -> io::Result<PathBuf> {

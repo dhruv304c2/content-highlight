@@ -1,4 +1,4 @@
-use std::{fs::OpenOptions, io::{self, Write}, path::PathBuf, process::{Command, Output}};
+use std::{error::Error, fs::OpenOptions, io::{self, Write}, path::PathBuf, process::{Command, Output}};
 use regex::Regex;
 use crate::{helpers::iso_8601_helper::seconds_to_time_format, structs::download_request::ContentRequest};
 use super::file_manager_service::FileManagerService;
@@ -11,7 +11,7 @@ pub struct VidDownloadService{
 
 impl VidDownloadService{
 
-    pub fn download_audio(download_request: &mut ContentRequest) -> io::Result<&mut ContentRequest> {
+    pub async fn download_audio(download_request: &mut ContentRequest) -> Result<&mut ContentRequest, Box<dyn Error>> {
 
         let trim_to = seconds_to_time_format(download_request.max_duration_sec);
  
@@ -35,11 +35,11 @@ impl VidDownloadService{
         }
         else{
             let err = io::Error::new(io::ErrorKind::Other, format!("-> Download failed for {}", download_request.title).to_string());
-            Err(err)
+            Err(Box::new(err))
         }
     }
 
-    pub fn download_highlights(content_request: &ContentRequest) -> io::Result<()>{
+    pub async fn download_highlights(content_request: &mut ContentRequest) -> Result<&mut ContentRequest, Box<dyn Error>>{
         for highlight in content_request.highlights.iter() {
             let relative_path = format!("{}/{}",content_request.lable,highlight.title); 
             let download_path = FileManagerService::create_highlight_dir(relative_path)?;
@@ -69,7 +69,7 @@ impl VidDownloadService{
             }
         }
 
-        Ok(())
+        Ok(content_request)
     }
 
     pub fn download_in_range(vid_id: String,
@@ -89,8 +89,7 @@ impl VidDownloadService{
         let mut cmd = Command::new("yt-dlp");
 
         if audio_only {
-            cmd.arg("-f").arg("worst") // Use the worst quality for faster audio download
-                .arg("-x")
+            cmd.arg("-x")
                 .arg("--audio-format")
                 .arg(AUDIO_FMT); // Convert to mp3 for consistent audio format
         }
