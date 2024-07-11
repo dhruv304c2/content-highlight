@@ -63,7 +63,7 @@ impl TranscriptionService {
 
         let download_dir_path = FileManagerService::get_downloads_path().expect("failed to get download path");
 
-        println!("-> Transcribing: \"{}\"", content_request.aud_file);
+        println!("  -> Transcribing: \"{}\"", content_request.aud_file);
         let command = format!("assemblyai transcribe \"{}\" -l", content_request.aud_file);
         let transcription_output = Command::new("zsh")
             .arg("-c")

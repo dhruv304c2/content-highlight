@@ -12,7 +12,7 @@ const OPEN_AI_BASE_URL : &str = "https://api.openai.com";
 
 impl LLMService {
     pub async fn get_highlights_from_transcription(content_request : &mut ContentRequest) -> Result<&mut ContentRequest, Box<dyn Error>> {
-        println!("-> Analysing transcript for: {}", content_request.title);
+        println!("  -> Analysing transcript for: {}", content_request.title);
 
         let transcript = TranscriptionService::read_transcript(content_request.clone())?;
 

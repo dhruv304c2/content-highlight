@@ -27,14 +27,14 @@ impl VidDownloadService{
             let mut file_name = Self::extract_file_names(&output).expect("failed to extract file name");
             file_name = Self::replace_extension(&file_name, AUDIO_FMT);
 
-            println!("-> Downloaded file: {}", file_name);
+            println!("  -> Downloaded file: {}", file_name);
 
             download_request.aud_file = file_name;
 
             Ok(download_request)
         }
         else{
-            let err = io::Error::new(io::ErrorKind::Other, format!("-> Download failed for {}", download_request.title).to_string());
+            let err = io::Error::new(io::ErrorKind::Other, format!("    -> Download failed for {}", download_request.title).to_string());
             Err(Box::new(err))
         }
     }
