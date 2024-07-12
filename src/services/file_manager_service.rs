@@ -4,9 +4,7 @@ pub const RELATIVE_DOWNLOAD_DIR_PATH : &str = "cache/downloads";
 pub const RELATIVE_TRANSCRIPTION_DIR_PATH : &str = "cache/transcriptions";
 pub const RELATIVE_HIGHLIGHTS_DIR_PATH : &str = "highlights";
 
-pub struct FileManagerService{
-
-}
+pub struct FileManagerService;
 
 impl FileManagerService {
 
