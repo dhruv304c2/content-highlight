@@ -4,6 +4,7 @@ mod services{
     pub mod transcription_service;
     pub mod file_manager_service;
     pub mod llm_service;
+    pub mod input_service;
 }
 
 mod structs{

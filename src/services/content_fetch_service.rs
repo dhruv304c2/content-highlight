@@ -1,5 +1,7 @@
-use std::{env, i64, io::{self, Write}};
+use std::{env, io::{self}};
+use regex::Regex;
 use crate::{helpers::iso_8601_helper, structs::{download_request::ContentRequest, search_response::{SearchItem, SearchResponse, VideoItem}}};
+use super::input_service::{InputService, Validation};
 
 const BASE_URL : &str = "https://www.googleapis.com/youtube"; 
 
@@ -17,6 +19,20 @@ pub struct SearchRequest{
 impl ContentFetchService {
 
     pub async fn start_fetch() -> io::Result<Vec<ContentRequest>> {
+        println!("Select a method");
+        println!("1) Create highlights using search");
+        println!("2) Create highlights using youtube video link");
+        let selection = InputService::get_input("Enter selection number: ".to_string(), 1);
+        println!("");
+        if selection == 1 {
+            Self::create_request_from_querry().await
+        }
+        else{
+            Self::create_request_from_link().await
+        }
+    } 
+
+    pub async fn create_request_from_querry() -> io::Result<Vec<ContentRequest>> {
         let client = reqwest::Client::new();
 
         let fetch_api_url = format!("{}/v3/search", BASE_URL).to_string();
@@ -78,39 +94,29 @@ impl ContentFetchService {
         return Ok(vec);
     }
 
-    pub fn get_valid_user_input<T>(prompt: String, default_val : T) -> T 
-    where T : std::str::FromStr {
-        let mut parsed = false;
-        let mut inp = String::new();
-        let mut paresed_val = default_val;
-
-        while !parsed {
-            print!("{}", prompt);
-            _ = io::stdout().flush();
-            inp.clear();
-            let _ = io::stdin().read_line(&mut inp);
-            inp = inp.trim().to_string();
-
-            let parse_result = inp.parse::<T>();
-
-            match parse_result {
-                Ok(val) => {
-                    paresed_val = val;
-                    break;
-                }
-                Err(_) => {
-                    parsed = false;
-                }
+    pub async fn create_request_from_link() -> io::Result<Vec<ContentRequest>> {
+        let mut requests = vec![];
+        let link = InputService::get_string("Enter watch link to the youtube video: ".to_string(), "".to_string(), Validation::YtLink);
+        let max_vid_len = InputService::get_input("Trim to length: ".to_string(), 10);
+        let vid_id = Self::extract_video_id(&link);
+        match vid_id {
+            Some(id) => {
+                let vid_details = Self::get_video_details(id).await;
+                let req = ContentRequest::new(vid_details.snippet.title, vid_details.id, max_vid_len);
+                requests.push(req);
+                return  Ok(requests);
             }
-        }
-        return paresed_val;
+            None =>{
+                panic!("could not extract video link from id");
+            }
+        } 
     }
 
     pub fn get_request_from_user() -> SearchRequest {
-        let query = Self::get_valid_user_input("Search for: ".to_string(), "".to_string());
-        let max_duration =  Self::get_valid_user_input("Minimum video length allowed (s) : ".to_string(), i64::MAX);
-        let trim_to = Self::get_valid_user_input("Maximum video length allowed (s) : ".to_string(), max_duration);
-        let max_video_count = Self::get_valid_user_input("Maximum result limit: ".to_string(), u32::MAX);
+        let query = InputService::get_input("Search for: ".to_string(), "".to_string());
+        let max_duration =  InputService::get_input("Minimum video length allowed (s) : ".to_string(), i64::MAX);
+        let trim_to = InputService::get_input("Maximum video length allowed (s) : ".to_string(), max_duration);
+        let max_video_count = InputService::get_input("Maximum result limit: ".to_string(), u32::MAX);
 
         return SearchRequest{
             query,
@@ -139,5 +145,15 @@ impl ContentFetchService {
         let result = serde_json::from_str::<SearchResponse<VideoItem>>(&response).expect("failed to parse search response");
 
         return result.items[0].clone();
+    }
+
+    fn extract_video_id(link: &str) -> Option<String> {
+     let re = Regex::new(r"(?:(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/|youtube\.com/v/|youtube\.com/e/|youtube\.com/.*[?&]v=))([a-zA-Z0-9_-]{11})").unwrap();
+        if let Some(captures) = re.captures(link) {
+            if let Some(video_id) = captures.get(1) {
+                return Some(video_id.as_str().to_string());
+            }
+        }
+        None
     }
 }

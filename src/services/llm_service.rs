@@ -1,7 +1,7 @@
 use core::str;
-use std::{env, error::Error, io::{self, Write}};
+use std::{env, error::Error};
 use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE}, Client};
-use crate::{helpers::llm_prompts, structs::{download_request::ContentRequest, llm::{APIResponse, HighlightResponse, Message, Request}}};
+use crate::{helpers::llm_prompts, structs::{download_request::{ContentRequest, HighLight}, llm::{APIResponse, HighlightResponse, Message, Request}}};
 use super::transcription_service::TranscriptionService;
 
 pub struct LLMService{
@@ -66,12 +66,22 @@ impl LLMService {
                 // println!("LLM response: {}", response.message.content);
                 let mut highlight_response = serde_json::from_str::<HighlightResponse>(&response.message.content)
                     .expect("failed to de serialize json");
+                Self::print_highlights(&highlight_response.highlights);
                 content_request.highlights.append(&mut highlight_response.highlights);
                 return Ok(content_request);
             }
             None => {
                 Err("LLM returned empty choice array".into())
             }
+        }
+    }
+
+    fn print_highlights(highlights: &Vec<HighLight>){
+        println!("  -> Generated Highlights:");
+        let mut count = 1;
+        for highlight in highlights {
+            println!("  {}) {} [{}]-[{}]", count, highlight.title, highlight.startStamp, highlight.endStamp);
+            count += 1;
         }
     }
 }
