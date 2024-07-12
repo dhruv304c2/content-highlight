@@ -12,8 +12,7 @@ keep the following things in mind:
 2) Make the titles click-bait and fun.
 3) Try to ignore introductions.
 4) Time stamps in transcript has format \"minutes:seconds\"
-5) create upto maximum of 5 highlights
-7) use emojis in title
+5) use emojis in title
 
 make sure that:
 1) start time is earlier than end time
