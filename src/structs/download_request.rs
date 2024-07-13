@@ -8,13 +8,13 @@ pub struct ContentRequest{
     pub aud_file: String,
     pub link : String,
     pub transcipt_name: String,
-    pub highlights: Vec<HighLight>,
+    pub highlights: Vec<Highlight>,
     pub lable : String,
     pub cancelled : bool
 }
 
 #[derive(Serialize,Deserialize,Clone)]
-pub struct HighLight {
+pub struct Highlight {
     pub title : String,
     pub description : String,
     pub startStamp : String,

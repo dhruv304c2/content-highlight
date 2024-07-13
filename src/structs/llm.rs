@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use super::download_request::HighLight;
+use super::download_request::Highlight;
 
 #[derive(Serialize,Deserialize,Clone)]
 pub struct Message{
@@ -27,7 +27,7 @@ pub struct  Response {
 
 #[derive(Serialize,Deserialize,Clone)]
 pub struct HighlightResponse{
-    pub highlights : Vec<HighLight>
+    pub highlights : Vec<Highlight>
 }
 
 impl Message{

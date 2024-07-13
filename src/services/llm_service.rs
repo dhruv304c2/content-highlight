@@ -1,21 +1,75 @@
-use core::str;
-use std::{env, error::Error};
+use std::{env, error::Error, sync::Arc};
 use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE}, Client};
-use crate::{helpers::llm_prompts, structs::{download_request::{ContentRequest, HighLight}, llm::{APIResponse, HighlightResponse, Message, Request}}};
+use crate::{helpers::llm_prompts, structs::{download_request::ContentRequest, llm::{APIResponse, HighlightResponse, Message, Request}}};
+use crate::structs::download_request::Highlight;
 use super::transcription_service::TranscriptionService;
+use tokio::task;
+use futures::future::join_all;
 
-pub struct LLMService{
 
-}
+pub struct LLMService;
 
 const OPEN_AI_BASE_URL : &str = "https://api.openai.com"; 
 
 impl LLMService {
-    pub async fn get_highlights_from_transcription(content_request : &mut ContentRequest) -> Result<&mut ContentRequest, Box<dyn Error>> {
-        println!("  -> Analysing transcript for: {}", content_request.title);
 
+    pub async fn generate_highlights(content_request : &mut ContentRequest) -> Result<&mut ContentRequest, Box<dyn Error>> {
+        println!("  -> Analysing transcript for: {}", content_request.title);
         let transcript = TranscriptionService::read_transcript(content_request.clone())?;
 
+        let chunks = Self::create_transcript_chunks(&transcript, 100);
+
+        let mut tasks = vec![];
+        for chunk in chunks {
+            let chunk = Arc::new(chunk);
+            let task = task::spawn(async move {
+                Self::process_chunk(chunk).await
+            });
+            tasks.push(task);
+        }
+
+        let results = join_all(tasks).await;
+
+        for result in results {
+            let highlights : Vec<Highlight> = result?;
+            content_request.highlights.extend(highlights.clone());
+        }
+
+        Self::print_highlights(&content_request.highlights);
+        Ok(content_request)
+    }
+
+    async fn process_chunk(chunk: Arc<String>) -> Vec<Highlight> {
+        let highlights = Self::send_highlight_request(&chunk).await.expect("LLM Service: failed to process transcript chunk");
+        highlights
+    }
+
+    fn create_transcript_chunks(transcript: &str, chunk_size : i64) -> Vec<String> {
+        let mut chunks : Vec<String> = vec![];
+        let mut lines : Vec<&str> = transcript.split("\n").collect();
+        let title = lines[0];
+        lines.remove(0);
+        let mut active_chunk_size = 0;
+        let mut active_chunk = vec![title];
+
+        for line in lines.iter() {
+            if chunk_size == active_chunk_size {
+                let chunk_str = active_chunk.join("\n"); 
+                chunks.push(chunk_str.clone());
+                active_chunk_size = 0;
+                active_chunk = vec![title];
+                // println!("Chunk: ");
+                // println!("{}", chunk_str);
+                continue;
+            }
+            active_chunk.push(line); 
+            active_chunk_size += 1;
+        }
+
+        return chunks;
+    }
+
+    async fn send_highlight_request(transcript: &str) -> Result<Vec<Highlight>, Box<dyn Error>> {
         let instruction_message = Message::new(
                 "system".to_string(),
                 llm_prompts::HIGHLIGHT_GENERATION_INSTRUCTIONS.to_string()
@@ -54,21 +108,17 @@ impl LLMService {
             .json(&request_body)
             .send().await
             .expect("failed to send highlight request")
-            .text()
-            .await
+            .text().await
             .expect("failed to convert response to text");
 
         // println!("llm response: \n{}", response);
         
         let ser_response = serde_json::from_str::<APIResponse>(&response)?;
-        match  ser_response.choices.first(){
+        match ser_response.choices.first(){
             Some(response) => {
-                // println!("LLM response: {}", response.message.content);
-                let mut highlight_response = serde_json::from_str::<HighlightResponse>(&response.message.content)
+                let highlight_response = serde_json::from_str::<HighlightResponse>(&response.message.content)
                     .expect("failed to de serialize json");
-                Self::print_highlights(&highlight_response.highlights);
-                content_request.highlights.append(&mut highlight_response.highlights);
-                return Ok(content_request);
+                Ok(highlight_response.highlights)
             }
             None => {
                 Err("LLM returned empty choice array".into())
@@ -76,7 +126,7 @@ impl LLMService {
         }
     }
 
-    fn print_highlights(highlights: &Vec<HighLight>){
+    fn print_highlights(highlights: &Vec<Highlight>){
         println!("  -> Generated Highlights:");
         let mut count = 1;
         for highlight in highlights {
