@@ -56,7 +56,7 @@ impl Step for LLMAnalysisStep{
     fn execute<'a>(&self, content_request : &'a mut ContentRequest) -> 
         Pin<Box<dyn Future<Output=Result<&'a mut ContentRequest, Box<dyn Error>>> + Send + 'a>> {
         Box::pin(async move {
-            let result = LLMService::get_highlights_from_transcription(content_request).await?;
+            let result = LLMService::generate_highlights(content_request).await?;
             Ok(result)
         })
     }

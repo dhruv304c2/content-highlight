@@ -1,6 +1,6 @@
 use std::{error::Error, fs::OpenOptions, io::{self, Write}, path::PathBuf, process::{Command, Output}};
 use regex::Regex;
-use crate::{helpers::iso_8601_helper::seconds_to_time_format, structs::download_request::{ContentRequest, HighLight}};
+use crate::{helpers::iso_8601_helper::seconds_to_time_format, structs::download_request::{ContentRequest}};
 use super::file_manager_service::FileManagerService;
 
 const AUDIO_FMT : &str = "mp3";
@@ -51,22 +51,30 @@ impl VidDownloadService{
                 highlight.startStamp.clone(),
                 highlight.endStamp.clone(),
                 false, 
-                Some(download_path.clone()))?;
+                Some(download_path.clone()));
 
-            if output.status.success() {
-                println!("Done ✔");
 
-                //saving highlight data
-                let mut data = OpenOptions::new()
-                    .write(true)
-                    .append(true)
-                    .create(true)
-                    .open(download_path.join(format!("{}.json", highlight.title)))?;
+            match output {
+                Ok(out) => {
+                    if out.status.success() {
+                        println!("Done ✔");
 
-                writeln!(data, "{}" ,serde_json::to_string(highlight).expect("failed to write highlight as json"))?;
-            }
-            else{
-                println!("Failed ✗");
+                        //saving highlight data
+                        let mut data = OpenOptions::new()
+                            .write(true)
+                            .append(true)
+                            .create(true)
+                            .open(download_path.join(format!("{}.json", highlight.title)))?;
+
+                        writeln!(data, "{}" ,serde_json::to_string(highlight).expect("failed to write highlight as json"))?;
+                    }
+                    else{
+                        println!("Failed ✗");
+                    }
+                }
+                Err(_) => {
+                    println!("Failed ✗");
+                },
             }
         }
 

@@ -3,20 +3,19 @@ pub const HIGHLIGHT_GENERATION_INSTRUCTIONS : &str =
 
 "you will be provided with a transcript in the next message. 
 which would have speech analysis data from a youtube video, 
-use this data to return time-stamps for specific highlight sections, 
-along with a title and description with which this section can be re-uploaded on youtube as 
-short video.
+use this data to return time-stamps for intresting sections. 
+also create a title and description for this section. 
+which can be used to uploaded this section as a 
+youtube video.
 
 keep the following things in mind:
-1) Try to keep the videos as short as possible, the target is to achieve 1 min videos.
+1) Try to keep the videos as short as possible, the target is to achieve 1 to 3 minute videos.
 2) Make the titles click-bait and fun.
-3) Try to ignore introductions.
-4) Time stamps in transcript has format \"minutes:seconds\"
-5) use emojis in title
+3) use emojis in title
 
 make sure that:
-1) start time is earlier than end time
-2) always include hours in timestamp even if the time is under 1 hour
+1) start time is always earlier than end time
+2) start and end time stamp should correspond to a timestamp on the transcript exactly
 
 return the results in the following JSON format: 
 
@@ -26,7 +25,7 @@ return the results in the following JSON format:
 	    title: String,
 	    description: String,
 	    startStamp: 00:00:00,
-	    endStamp: 60:60:60	
+	    endStamp: 100:60:60	
 	}
     ]
 }

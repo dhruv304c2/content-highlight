@@ -78,7 +78,7 @@ impl TranscriptionService {
                     let transcription = String::from_utf8_lossy(&output.stdout).to_string();
                     let transcript_name = content_request.transcipt_name.clone();
                     let title = content_request.title.clone();
-                    let result = Self::write_transcription_to_file(transcript_name,
+                    let result = Self::write_transcript(transcript_name,
                         title,
                         transcription);
                     match result {
@@ -102,7 +102,7 @@ impl TranscriptionService {
         Err(Box::new(err))
     }
 
-    fn write_transcription_to_file(file_name: String, title: String, transcription: String) -> io::Result<PathBuf> {
+    fn write_transcript(file_name: String, title: String, transcription: String) -> io::Result<PathBuf> {
         let transcriptions_path = FileManagerService::get_transcription_path();
         let full_path = transcriptions_path?.join(file_name);
 
